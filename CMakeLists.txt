@@ -5,12 +5,14 @@ project(ffmpeg_player LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+########################现阶段不可移植，后续更改#######################
 add_executable(ffmpeg_player main.cpp
     Thread.h Thread.cpp
     DemuxThread.h DemuxThread.cpp
     Queue.h
     AVPacketQueue.h AVPacketQueue.cpp
     AVFrameQueue.h AVFrameQueue.cpp
+    DecodeThread.h DecodeThread.cpp
 )
 
 #ffmpeg根目录

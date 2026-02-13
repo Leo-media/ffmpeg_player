@@ -114,3 +114,21 @@ void DemuxThread::Run()
     avformat_close_input(&ifmt_ctx_);
     printf("退出DemuxThread类run函数");
 }
+
+AVCodecParameters *DemuxThread::AudioCodecParameters()
+{
+    if (audio_stream_ != -1) {
+        return ifmt_ctx_->streams[audio_stream_]->codecpar;
+    } else {
+        return NULL;
+    }
+}
+
+AVCodecParameters *DemuxThread::VideoCodecParameters()
+{
+    if (video_stream_ != -1) {
+        return ifmt_ctx_->streams[video_stream_]->codecpar;
+    } else {
+        return NULL;
+    }
+}

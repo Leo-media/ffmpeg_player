@@ -20,6 +20,10 @@ public:
     virtual int Stop();
     virtual void Run();
 
+    //负责给DecodeThread传递数据
+    AVCodecParameters* AudioCodecParameters();
+    AVCodecParameters* VideoCodecParameters();
+
 private:
     std::string url_;
     //i=输入  fmt=format  ctx =context
