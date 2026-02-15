@@ -1,7 +1,9 @@
+#define SDL_MAIN_HANDLED        //禁止SDL重定义main
 #include "DemuxThread.h"
 #include "AVFrameQueue.h"
 #include "DecodeThread.h"
-#include <windows.h>
+#include "AudioOutput.h"
+#include "VideoOutput.h"
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -11,8 +13,8 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    //使控制台编码为UTF8
-    SetConsoleOutputCP(CP_UTF8);
+    //使控制台编码为UTF8，需要include <windows>
+    // SetConsoleOutputCP(CP_UTF8);
 
     //打印命令行参数
     printf("url:%s\n", argv[1]);
@@ -63,7 +65,33 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    //音频输出
+    AudioParams audio_params;
+    memset(&audio_params, 0, sizeof(audio_params));
+    audio_params.ch_layout = audio_decode_thread->GetAVCodecContext()->ch_layout;
+    audio_params.fmt = audio_decode_thread->GetAVCodecContext()->sample_fmt;
+    audio_params.freq = audio_decode_thread->GetAVCodecContext()->sample_rate;
+    AudioOutput* audio_output = new AudioOutput(audio_params, &audio_frame_queue);
+    ret = audio_output->Init();
+    if (ret < 0) {
+        printf("%s(%d) audio_output Init\n", __FUNCTION__, __LINE__);
+        return -1;
+    }
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(100000));
+    //视频输出
+    VideoOutput* video_output = new VideoOutput(&video_frame_queue, video_decode_thread->GetAVCodecContext()->width,
+                                                video_decode_thread->GetAVCodecContext()->height);
+    ret = video_output->Init();
+    if (ret < 0) {
+        printf("%s(%d) video_output Init\n", __FUNCTION__, __LINE__);
+        return -1;
+    }
+    video_output->MainLoop();
+
+    printf("%s(%d) audio_output_thread delete\n", __FUNCTION__, __LINE__);
+    audio_output->DeInit();
+    delete audio_output;
     printf("%s(%d) demux_thread delete\n", __FUNCTION__, __LINE__);
     demux_thread->Stop();
     delete demux_thread;

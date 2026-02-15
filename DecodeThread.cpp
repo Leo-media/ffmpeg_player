@@ -84,6 +84,7 @@ void DecodeThread::Run()
             while (true) {
                 ret = avcodec_receive_frame(codec_ctx_, frame);  //存在B帧场景  B3-2 P2-3  I1-1 --> P3 B2 I1
                 if (ret == 0) {
+                    //把frame发送给framequeue
                     frame_queue_->Push(frame);
                     printf("%s frame_queue size:%d\n", codec_ctx_->codec->name, frame_queue_->Size());
                     continue;
@@ -96,9 +97,13 @@ void DecodeThread::Run()
                     break;
                 }
             }
-            //把frame发送给framequeue
         } else {
             printf("no packet\n");
         }
     }
+}
+
+AVCodecContext *DecodeThread::GetAVCodecContext()
+{
+    return codec_ctx_;
 }

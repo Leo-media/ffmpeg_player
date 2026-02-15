@@ -15,6 +15,7 @@ public:
     int Start();
     int Stop();
     void Run();
+    AVCodecContext* GetAVCodecContext();
 
 private:
     char err2str[256] = {0};
