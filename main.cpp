@@ -4,6 +4,7 @@
 #include "DecodeThread.h"
 #include "AudioOutput.h"
 #include "VideoOutput.h"
+#include "AVSync.h"
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -23,6 +24,7 @@ int main(int argc, char *argv[])
     AVPacketQueue video_packet_queue;
     AVFrameQueue audio_frame_queue;
     AVFrameQueue video_frame_queue;
+    AVSync avsync;
 
     int ret = 0;
     DemuxThread* demux_thread = new DemuxThread(&audio_packet_queue, &video_packet_queue);
@@ -65,13 +67,14 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    avsync.InitClock();
     //音频输出
     AudioParams audio_params;
     memset(&audio_params, 0, sizeof(audio_params));
     audio_params.ch_layout = audio_decode_thread->GetAVCodecContext()->ch_layout;
     audio_params.fmt = audio_decode_thread->GetAVCodecContext()->sample_fmt;
     audio_params.freq = audio_decode_thread->GetAVCodecContext()->sample_rate;
-    AudioOutput* audio_output = new AudioOutput(audio_params, &audio_frame_queue);
+    AudioOutput* audio_output = new AudioOutput(&avsync, audio_params, &audio_frame_queue, demux_thread->AudioStreamTimebase());
     ret = audio_output->Init();
     if (ret < 0) {
         printf("%s(%d) audio_output Init\n", __FUNCTION__, __LINE__);
@@ -80,8 +83,8 @@ int main(int argc, char *argv[])
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(100000));
     //视频输出
-    VideoOutput* video_output = new VideoOutput(&video_frame_queue, video_decode_thread->GetAVCodecContext()->width,
-                                                video_decode_thread->GetAVCodecContext()->height);
+    VideoOutput* video_output = new VideoOutput(&avsync, &video_frame_queue, video_decode_thread->GetAVCodecContext()->width,
+                                                video_decode_thread->GetAVCodecContext()->height, demux_thread->VideoStreamTimebase());
     ret = video_output->Init();
     if (ret < 0) {
         printf("%s(%d) video_output Init\n", __FUNCTION__, __LINE__);

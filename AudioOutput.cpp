@@ -7,8 +7,8 @@ extern "C" {
 }
 
 
-AudioOutput::AudioOutput(const AudioParams &aduio_params, AVFrameQueue *frame_queue):
-    src_tgt_(aduio_params), frame_queue_(frame_queue)
+AudioOutput::AudioOutput(AVSync* avsync, const AudioParams &aduio_params, AVFrameQueue *frame_queue, AVRational time_base):
+    avsync_(avsync), src_tgt_(aduio_params), frame_queue_(frame_queue), time_base_(time_base)
 {
 
 }
@@ -26,6 +26,7 @@ void sdl_audio_callback(void* userdata, Uint8* stream, int len) {
             //1. 读取pcm的数据
             audio_output->audio_buf_index = 0;
             AVFrame* frame = audio_output->frame_queue_->Pop(2);
+            audio_output->pts = frame->pts * av_q2d(audio_output->time_base_);
             if (frame) {
                 //2. 做重采样器
                 //2.1初始化重采样器
@@ -109,6 +110,8 @@ void sdl_audio_callback(void* userdata, Uint8* stream, int len) {
         printf("len:%d, audio_buf_index:%d, %\n", len, audio_output->audio_buf_index,
                audio_output->audio_buf_size);
     }
+    printf("audio pts: %0.3lf\n", audio_output->pts);
+    audio_output->avsync_->SetClock(audio_output->pts);
 }
 
 int AudioOutput::Init()

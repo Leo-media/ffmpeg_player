@@ -1,8 +1,8 @@
 #include "VideoOutput.h"
 #include <thread>
 
-VideoOutput::VideoOutput(AVFrameQueue *frame_queue, int video_width, int video_height):
-    frame_queue_(frame_queue), video_width_(video_width), video_height_(video_height)
+VideoOutput::VideoOutput(AVSync* avsync, AVFrameQueue *frame_queue, int video_width, int video_height, AVRational time_base):
+    avsync_(avsync), frame_queue_(frame_queue), video_width_(video_width), video_height_(video_height), time_base_(time_base)
 {
 
 }
@@ -60,22 +60,36 @@ int VideoOutput::MainLoop()
     return 0;
 }
 
+//0.01秒循环一次
+#define REFRESH_RATE 0.01
 void VideoOutput::RefreshLoopWaitEvent(SDL_Event *event)
 {
+    double remain_time = 0.0;   //秒
     SDL_PumpEvents();
     while (!SDL_PeepEvents(event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
-        videoRefresh();
+        if (remain_time > 0.0){
+            std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(remain_time * 1000)));
+        }
+        videoRefresh(remain_time);
         SDL_PumpEvents();
     }
 }
 
-void VideoOutput::videoRefresh()
+void VideoOutput::videoRefresh(double &remain_time)
 {
     AVFrame* frame = nullptr;
     frame = frame_queue_->Front();
     if (frame) {
-        printf("video pts:%ld\n", frame->pts);
+        double pts = frame->pts * av_q2d(time_base_);
+        double diff = pts - avsync_->GetClock();
+        printf("video pts:%0.3lf\n", pts, diff);
+        if (diff > 0){  //diff = 0.005秒
+            remain_time = diff;
+            if (remain_time > REFRESH_RATE) {
+                remain_time = REFRESH_RATE;
+            }
+            return;
+        }
         SDL_Rect rect;
         rect.x = 0;
         rect.y = 0;

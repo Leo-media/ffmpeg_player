@@ -14,6 +14,7 @@ add_executable(ffmpeg_player main.cpp
     DecodeThread.h DecodeThread.cpp
     AudioOutput.h AudioOutput.cpp
     VideoOutput.h VideoOutput.cpp
+    AVSync.h
 )
 
 ########################现阶段不可移植，后续更改#######################

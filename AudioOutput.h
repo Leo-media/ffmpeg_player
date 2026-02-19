@@ -2,6 +2,7 @@
 #define AUDIOOUTPUT_H
 
 #include "AVFrameQueue.h"
+#include "AVSync.h"
 
 typedef struct _AudioParams
 {
@@ -13,7 +14,7 @@ typedef struct _AudioParams
 class AudioOutput
 {
 public:
-    AudioOutput(const AudioParams &aduio_params, AVFrameQueue* frame_queue);
+    AudioOutput(AVSync* avsync, const AudioParams &aduio_params, AVFrameQueue* frame_queue, AVRational time_base);
     ~AudioOutput();
     int Init();
     int DeInit();
@@ -30,6 +31,10 @@ public:
     uint8_t* audio_buf_ = nullptr;
     uint32_t audio_buf_size = 0;        //真正重采样后总共占用字节
     uint32_t audio_buf_index = 0;
+
+    AVRational time_base_;
+    AVSync* avsync_ = nullptr;
+    double pts = 0;
 };
 
 #endif // AUDIOOUTPUT_H

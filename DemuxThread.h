@@ -24,6 +24,13 @@ public:
     AVCodecParameters* AudioCodecParameters();
     AVCodecParameters* VideoCodecParameters();
 
+    AVRational AudioStreamTimebase(){
+        return ifmt_ctx_->streams[audio_stream_]->time_base;
+    }
+    AVRational VideoStreamTimebase(){
+        return ifmt_ctx_->streams[video_stream_]->time_base;
+    }
+
 private:
     std::string url_;
     //i=输入  fmt=format  ctx =context
